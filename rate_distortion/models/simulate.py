@@ -18,13 +18,13 @@ from torchvision.utils import save_image
 from ..utils.experiment_utils import note_taking
 
 _SDATA = dict()
-""" 
-The simulated data is returned as list, instead of iterators. 
+"""
+The simulated data is returned as list, instead of iterators.
 Justification: Need to run through it multiply times, and:
-"This itertool may require significant auxiliary storage 
-(depending on how much temporary data needs to be stored). 
-In general, if one iterator uses most or all of the data 
-before another iterator starts, it is faster to use list() 
+"This itertool may require significant auxiliary storage
+(depending on how much temporary data needs to be stored).
+In general, if one iterator uses most or all of the data
+before another iterator starts, it is faster to use list()
 instead of tee()."
 https://docs.python.org/3/library/itertools.html#itertools.tee
  """
@@ -41,8 +41,12 @@ def register(name):
 
 
 def get_simulate_data(model, batch_size, n_batch, hparams, rd=False, beta=None):
-    return _SDATA[hparams.simulated_data](
-        model, batch_size, n_batch, hparams, rd=False, beta=beta)
+    return _SDATA[hparams.simulated_data](model,
+                                          batch_size,
+                                          n_batch,
+                                          hparams,
+                                          rd=False,
+                                          beta=beta)
 
 
 def save_simulated_data(hparams, x, x_mean, i, beta=None):
@@ -78,13 +82,13 @@ def simulate_data(model, batch_size, n_batch, hparams, rd=False, beta=None):
     z_list = list()
     for i in range(n_batch):
         # assume prior is unit Gaussian
-        z = torch.randn([batch_size,
-                         hparams.model_train.z_size]).requires_grad_().to(
-                             device=hparams.device, dtype=hparams.tensor_type)
+        z = torch.randn([batch_size, hparams.model_train.z_size
+                        ]).requires_grad_().to(device=hparams.device,
+                                               dtype=hparams.tensor_type)
         x_mean, x_logvar = model.decode(z)
         if beta is not None:
             if hparams.rd.target_dist == "joint_xz" or hparams.rd.target_dist == "mix_prior":
-                x_logvar -= torch.log(torch.tensor(beta)).to(
+                x_logvar = x_logvar - torch.log(torch.tensor(beta)).to(
                     device=hparams.device, dtype=hparams.tensor_type)
             else:
                 x_logvar = -torch.log(torch.tensor(2 * beta)).to(
@@ -92,8 +96,8 @@ def simulate_data(model, batch_size, n_batch, hparams, rd=False, beta=None):
 
         std = torch.ones(x_mean.size()).mul(torch.exp(x_logvar * 0.5))
         x_normal_dist = Normal(loc=x_mean, scale=std)
-        x = x_normal_dist.sample().to(
-            device=hparams.device, dtype=hparams.tensor_type)
+        x = x_normal_dist.sample().to(device=hparams.device,
+                                      dtype=hparams.tensor_type)
 
         paired_batch = (x, z)
         gpu_batches.append(paired_batch)
